@@ -1,8 +1,26 @@
 # dsh-coros-mcp
 
+<p>
+  <a href="https://github.com/xsnnnnnn/dsh-coros"><img alt="GitHub repo" src="https://img.shields.io/badge/github-xsnnnnnn%2Fdsh--coros-181717?logo=github"></a>
+  <img alt="DeepSeek Harness" src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.1--rc.5%20%7C%200.2.2--rc.1-4B8BBE">
+  <img alt="Node.js" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-42%20passing-brightgreen">
+</p>
+
 Bridges the official **COROS (高驰) MCP** server into DeepSeek Harness. One install exposes the full `mcp__coros__*` tool set: sleep, HRV, resting heart rate, recovery, training load, activities and FIT files, plus workout / training-plan CRUD and scheduling (34 tools on the current endpoint; may change with the server).
 
 Self-contained: the stdio bridge, the OAuth login flow and token refresh all live in this package. No external CLI, no absolute paths in your profile, no local callback port.
+
+## Highlights
+
+- **Zero runtime dependencies** — plain Node.js built-ins (`fetch`, `crypto`, `fs`, `http`); nothing to `npm install`.
+- **Self-contained OAuth** — dynamic client registration + PKCE(S256) + COROS CLI login-session flow; `login-start` / `login-finish` are separate processes and open **no local port**.
+- **Survives DSH upgrades** — `engines.dsh` is a bottomless minimum (`>=0.2.1-rc.1`), and if a future DSH changes the MCP-client JS API the plugin falls back to mounting the same row through the core Cordis Loader. It is not silently gated off by a version bump.
+- **Tokens stay local** — `~/.dsh/coros-mcp/<region>/token.json` (0600), outside the profile config, never printed in logs, no telemetry, no third-party server in the data path.
+- **Bridge fixes real MCP schema issues** — COROS serves `tools/list` schemas with top-level `$defs`/`$ref`; the bridge inlines them so providers do not reject `createScheduledWorkout` with `Pointer '/$defs/Section' does not exist`.
+- **Rotation-safe refresh** — COROS rotates the refresh token on every refresh; bridge and login CLI serialise refreshes with one cross-process file lock.
+- **Works Outside DSH too** — `lib/proxy.mjs` is a standard MCP stdio server usable from any MCP client.
 
 ---
 
@@ -41,7 +59,7 @@ Requires DeepSeek Harness ≥ `0.2.1-rc.1` (`engines.dsh` is a bottomless range,
 
 ```powershell
 # tarball (recommended for sharing)
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
+& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh-coros'
 
 # linked directory (development)
 & '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'D:\path\to\dsh-coros-mcp'
@@ -126,6 +144,19 @@ npm run status           # offline status
 npm run selftest         # real endpoint: initialize + tools/list
 npm pack                 # prepack runs scripts/prepack-check.mjs
 ```
+
+## Repository layout
+
+| Path | Purpose |
+|---|---|
+| `lib/index.js` | Host half: registers the DSH MCP client (direct import + Loader fallback) |
+| `lib/proxy.mjs` | stdio↔HTTP bridge (`--status` / `--selftest` / MCP stdio server) |
+| `lib/login.mjs` | Self-contained OAuth: `login-start` / `login-finish` / `login-status` / `refresh` / `logout` |
+| `lib/config.mjs` | Token cache, region resolution, refresh with a cross-process file lock |
+| `cordis.patch.yml` · `dsh.plugin.json` | Bundle manifest and plugin metadata |
+| `assets/icon.png` | Plugin icon (DSH plugin page / marketplace card) |
+| `test/` | 42 offline tests, including the full mock-issuer login/refresh flow |
+| `scripts/prepack-check.mjs` | Pre-publish static checks (manifest/icon/secret leakage) |
 
 ## Compatibility & license
 

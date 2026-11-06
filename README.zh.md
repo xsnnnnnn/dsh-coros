@@ -1,8 +1,26 @@
 # dsh-coros-mcp
 
+<p>
+  <a href="https://github.com/xsnnnnnn/dsh-coros"><img alt="GitHub 仓库" src="https://img.shields.io/badge/github-xsnnnnnn%2Fdsh--coros-181717?logo=github"></a>
+  <img alt="DeepSeek Harness" src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.1--rc.5%20%7C%200.2.2--rc.1-4B8BBE">
+  <img alt="Node.js" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-42%20passing-brightgreen">
+</p>
+
 把**高驰（COROS）官方 MCP**接进 DeepSeek Harness：一次安装，`mcp__coros__*` 工具全部出现——睡眠 / HRV / 静息心率 / 恢复分 / 训练负荷、运动记录与 FIT 文件、课表与训练计划（创建 / 修改 / 排期）、设备与路线等（当前官方端点 34 个工具，随端点版本可能变化）。
 
 **自包含**：桥接脚本、OAuth 登录、令牌续期都在本包内。不需要 `~/.coros-mcp` 里的外部 CLI，不需要在 profile 配置里写任何绝对路径，也不需要本地回调端口。
+
+## 亮点
+
+- **零运行时依赖** —— 只用 Node 内置模块（`fetch` / `crypto` / `fs` / `http`），不用 `npm install` 装任何东西。
+- **自包含 OAuth** —— 动态客户端注册 + PKCE(S256) + COROS CLI 登录会话；`login-start` / `login-finish` 可跨进程，**不监听任何本地端口**。
+- **DSH 升级不再失效** —— `engines.dsh` 为无上限下限（`>=0.2.1-rc.1`）；若未来 DSH 改了 MCP 客户端 JS API，插件会自动改用 Cordis Loader 挂载同一行，不会因为版本号变化被静默拦掉。
+- **令牌只在本机** —— `~/.dsh/coros-mcp/<区域>/token.json`（0600），不在 profile 配置里，日志不打印，无遥测，数据不经过第三方服务器。
+- **修掉真实 MCP schema 问题** —— COROS 的 `tools/list` 用顶层 `$defs`/`$ref`，桥接会内联展开，避免模型侧报 `Pointer '/$defs/Section' does not exist` 导致整轮失败。
+- **刷新轮换安全** —— COROS 每次刷新都会轮换 refresh_token；桥接与登录 CLI 共用一把跨进程文件锁串行化续期，避免互相作废。
+- **也能独立使用** —— `lib/proxy.mjs` 是标准 MCP stdio server，Claude Desktop / Cursor 等任何 MCP 客户端都能接。
 
 ---
 
@@ -43,7 +61,7 @@ DeepSeek Harness
 
 ```powershell
 # 在包目录 npm pack 生成 dsh-coros-mcp-<version>.tgz
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
+& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh-coros'
 ```
 
 ### 方式 B：从目录安装（开发）
@@ -158,6 +176,19 @@ npm run selftest         # 真实端点：initialize + tools/list
 node research/preflight.mjs .   # 商城上架静态预检（仓库根目录执行时）
 npm pack                 # prepack 自动跑 scripts/prepack-check.mjs
 ```
+
+## 仓库结构
+
+| 路径 | 内容 |
+|---|---|
+| `lib/index.js` | 宿主半：注册 DSH MCP 客户端（主路径 + Loader 兜底） |
+| `lib/proxy.mjs` | stdio↔HTTP 桥（`--status` / `--selftest` / MCP server） |
+| `lib/login.mjs` | 自包含 OAuth：`login-start` / `login-finish` / `login-status` / `refresh` / `logout` |
+| `lib/config.mjs` | 令牌缓存、区域解析、带文件锁的续期 |
+| `cordis.patch.yml` · `dsh.plugin.json` | bundle 清单与插件元数据 |
+| `assets/icon.png` | 插件图标（DSH 插件页 / 市场卡片） |
+| `test/` | 42 项零网络测试（含协议一致 mock issuer 全链路） |
+| `scripts/prepack-check.mjs` | 发包前静态检查（清单/图标/密钥泄漏） |
 
 ## 兼容性与许可
 

@@ -65,10 +65,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xsnnnnnn/dsh.git"
+    "url": "git+https://github.com/xsnnnnnn/dsh-coros.git"
   },
-  "homepage": "https://github.com/xsnnnnnn/dsh#readme",
+  "homepage": "https://github.com/xsnnnnnn/dsh-coros#readme",
   "bugs": {
-    "url": "https://github.com/xsnnnnnn/dsh/issues"
+    "url": "https://github.com/xsnnnnnn/dsh-coros/issues"
   }
 }
