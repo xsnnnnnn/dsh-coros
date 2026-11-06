@@ -3,7 +3,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { bridgeArgs, bridgeExists, mcpClientConfig, resolveNodeExecutable } from '../lib/index.js';
+import { bridgeArgs, bridgeExists, loadMcpClientPlugin, mcpClientConfig, resolveNodeExecutable } from '../lib/index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(HERE, '..');
@@ -14,12 +14,29 @@ test('resolveNodeExecutable prefers an explicit nodePath', () => {
   assert.deepEqual(resolved.env, {});
 });
 
-test('resolveNodeExecutable prefers the DSH desktop node executable', () => {
+test('resolveNodeExecutable prefers an existing DSH desktop node executable', () => {
   const resolved = resolveNodeExecutable({}, {
-    DSH_DESKTOP_NODE_EXECUTABLE: 'D:/dsh/node.exe',
+    DSH_DESKTOP_NODE_EXECUTABLE: process.execPath,
     DSH_HOME: 'D:/dsh',
   });
-  assert.equal(resolved.command, 'D:/dsh/node.exe');
+  assert.equal(resolved.command, process.execPath);
+});
+
+test('resolveNodeExecutable ignores a stale DSH desktop node path', () => {
+  const resolved = resolveNodeExecutable({}, {
+    DSH_DESKTOP_NODE_EXECUTABLE: 'D:/does/not/exist/node.exe',
+    DSH_HOME: 'D:/does/not/exist',
+  });
+  assert.notEqual(resolved.command, 'D:/does/not/exist/node.exe');
+});
+
+test('loadMcpClientPlugin can be forced onto the Loader fallback path', async () => {
+  process.env.COROS_MCP_FORCE_LOADER_FALLBACK = '1';
+  try {
+    assert.equal(await loadMcpClientPlugin(), null);
+  } finally {
+    delete process.env.COROS_MCP_FORCE_LOADER_FALLBACK;
+  }
 });
 
 test('resolveNodeExecutable falls back to an Electron re-entry with ELECTRON_RUN_AS_NODE', () => {

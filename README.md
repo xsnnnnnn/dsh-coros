@@ -24,19 +24,27 @@ The bridge exists because DSH's MCP client speaks stdio / static headers while t
 
 Login (`lib/login.mjs`) uses COROS' gateway CLI login session: dynamic client registration + PKCE(S256) + browser authorization + polling for the one-time `loginTicket` + server-side code exchange. No local listener is started, so `login-start` and `login-finish` are independent processes and Windows has no port conflicts.
 
+## Does a DSH upgrade disable it?
+
+**No longer because of a version mismatch.** How it works:
+
+- At profile start DSH evaluates `engines.dsh` (`app-boot` → `evaluatePluginCompatibility`) with `semver.satisfies(..., { includePrerelease: true })`. Earlier builds declared a **finite** range (the 0.2.1 line plus a single 0.2.2 RC); when DSH auto-updated to a newer RC the range no longer matched, so the plugin was skipped silently — that is why the COROS tools disappeared after a DSH update.
+- Since 1.0.2 `engines.dsh` is a **bottomless minimum**: `>=0.2.1-rc.1`. With `includePrerelease: true` that covers 0.2.1, 0.2.2, future 0.2.x RCs, 0.3.x, 1.x — **normal DSH upgrades will not gate it out again**.
+- Belt and braces: if a future DSH release changes the `@deepseek-ai/dsh-mcp-client` JS exports, the plugin falls back to mounting the same MCP-client row through the core Cordis Loader (`ctx.loader.create`, the same path profile patches use). Only when both registration paths fail does it log an explicit `[coros-mcp] could not attach the DSH MCP client` warning.
+- The one case not guaranteed: a breaking DSH API change where both registration paths are gone. Install a freshly built plugin for that DSH version; tokens and login state are unaffected.
+
+> A GitHub/tarball install does not auto-upgrade the plugin itself; re-run `dsh plugin add <new tgz>` when a new build is available.
+
 ## Install
 
-Requires DeepSeek Harness `0.2.1` / `0.2.2` RC lines (enforced by `engines.dsh`) and Node.js ≥ 20 (the DSH runtime provides one).
+Requires DeepSeek Harness ≥ `0.2.1-rc.1` (`engines.dsh` is a bottomless range, so future versions are not blocked) and Node.js ≥ 20 (the DSH runtime provides one).
 
 ```powershell
 # tarball (recommended for sharing)
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'file:D:\path\to\dsh-coros-mcp-1.0.1.tgz'
+& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
 
 # linked directory (development)
 & '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'D:\path\to\dsh-coros-mcp'
-
-# straight from this GitHub repository
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
 ```
 
 Then enable `dsh-coros-mcp` in **Settings → Plugins** and restart DSH if needed.
@@ -104,7 +112,7 @@ node lib\proxy.mjs --selftest    # real initialize + tools/list against COROS
 | `no COROS login found` | run `login-start` / `login-finish` |
 | `token refresh failed (HTTP 400)` | refresh token rotated/revoked — log in again |
 | `timed out waiting for the token lock` | delete `token.json.lock` after confirming no other COROS process runs |
-| Tools disappear after a DSH upgrade | check `engines.dsh` covers the new DSH version; otherwise the host refuses to load the plugin |
+| Tools disappear after a DSH upgrade | 1.0.2+ is no longer gated by the version check; if it still happens, search the DSH log for `[coros-mcp]` (likely an MCP-client API change) and install the plugin build for that DSH version |
 
 ## Privacy
 
@@ -121,7 +129,7 @@ npm pack                 # prepack runs scripts/prepack-check.mjs
 
 ## Compatibility & license
 
-- `engines.dsh`: `>=0.2.1-rc.1 <=0.2.1 || >=0.2.2-rc.1 <0.2.3-0`; `dsh.compatibility.dshReleases`: `0.2.1-rc.5`, `0.2.2-rc.1` = compatible.
+- `engines.dsh`: `>=0.2.1-rc.1` (**no upper bound**, covers future releases; DSH evaluates with `includePrerelease: true`); `dsh.compatibility.dshReleases`: `0.2.1-rc.5`, `0.2.2-rc.1` = compatible.
 - Node.js ≥ 20, no third-party runtime dependencies.
 - MIT. COROS and 高驰 are trademarks of their owner; this project is unofficial.
 - Protocol details were derived from the public COROS gateway endpoints and the official CLI's observable behaviour; no code from the UNLICENSED official npm packages is copied or bundled.

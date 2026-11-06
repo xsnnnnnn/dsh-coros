@@ -1,6 +1,6 @@
 {
   "name": "dsh-coros-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bridge the official COROS (高驰) MCP server into DeepSeek Harness: a self-contained stdio-to-HTTP bridge with on-device OAuth login; tokens never leave this machine.",
   "icon": "assets/icon.png",
   "keywords": [
@@ -13,14 +13,6 @@
     "training-data"
   ],
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/xsnnnnnn/dsh.git"
-  },
-  "homepage": "https://github.com/xsnnnnnn/dsh#readme",
-  "bugs": {
-    "url": "https://github.com/xsnnnnnn/dsh/issues"
-  },
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -43,7 +35,7 @@
   ],
   "engines": {
     "node": ">=20.0.0",
-    "dsh": ">=0.2.1-rc.1 <=0.2.1 || >=0.2.2-rc.1 <0.2.3-0"
+    "dsh": ">=0.2.1-rc.1"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-mcp-client": "*"
@@ -70,5 +62,13 @@
         "0.2.2-rc.1": "compatible"
       }
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xsnnnnnn/dsh.git"
+  },
+  "homepage": "https://github.com/xsnnnnnn/dsh#readme",
+  "bugs": {
+    "url": "https://github.com/xsnnnnnn/dsh/issues"
   }
 }

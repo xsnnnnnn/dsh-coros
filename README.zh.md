@@ -24,15 +24,26 @@ DeepSeek Harness
 
 登录流程（`lib/login.mjs`）走 COROS 网关自带的 CLI 登录会话：动态客户端注册 + PKCE(S256) + 浏览器授权 + 轮询 `loginTicket` + 服务器端换取授权码。**不监听本地端口**，所以 `login-start` 和 `login-finish` 可以是两个独立进程，Windows 上也没有端口冲突问题。
 
+## DSH 升级后还会失效吗（更新保障）
+
+**不会再因为「版本号不匹配」被自动停用。** 机制与原因：
+
+- DSH 在启动 profile 时用 `engines.dsh`（`app-boot` 的 `evaluatePluginCompatibility`）判定插件能否加载；判定用 `semver.satisfies(..., { includePrerelease: true })`。旧版插件写的是**有限区间**（只含 0.2.1 线 + 0.2.2 那一个 rc），DSH 自动升级到新的 rc 后区间不匹配，插件被跳过且没有任何提示——这就是「DSH 一更新高驰工具就消失」的原因。
+- 1.0.2 起 `engines.dsh` 改成**只有下限、没有上限**的 `>=0.2.1-rc.1`。在 `includePrerelease: true` 语义下，它覆盖 0.2.1、0.2.2、0.2.x 未来 rc、0.3.x、1.x 等所有更高版本 → **以后 DSH 正常升级不会再把插件拦下来**。
+- 双保险：即使未来 DSH 改了 `@deepseek-ai/dsh-mcp-client` 的 JS 导出形态（导入失败），插件会自动改用 Cordis Loader 的 `ctx.loader.create` 挂载同一个 MCP 客户端行（与 profile patch 走同一条路径）；只有两条路都失败才会在日志里给出明确 warning。
+- 唯一不保证的是「DSH 做了破坏性 API 改造、且两条注册路径都失效」；那时日志会出现 `[coros-mcp] could not attach the DSH MCP client`，重新安装适配新版的插件构建即可。
+
+> 从 GitHub/tgz 安装的插件不会随 DSH 自动升级插件自身版本；需要时重新跑一次 `dsh plugin add <新 tgz>`。token、登录状态不受插件升级影响。
+
 ## 安装
 
-要求：DeepSeek Harness `0.2.1` / `0.2.2` 的 rc 线（`engines.dsh` 会校验）、Node.js ≥ 20（DSH 自带运行时即可）。
+要求：DeepSeek Harness ≥ `0.2.1-rc.1`（`engines.dsh` 为无上限区间，未来版本不会被拦截）、Node.js ≥ 20（DSH 自带运行时即可）。
 
 ### 方式 A：从 tarball 安装（推荐分发）
 
 ```powershell
 # 在包目录 npm pack 生成 dsh-coros-mcp-<version>.tgz
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'file:D:\path\to\dsh-coros-mcp-1.0.1.tgz'
+& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
 ```
 
 ### 方式 B：从目录安装（开发）
@@ -42,12 +53,6 @@ DeepSeek Harness
 ```
 
 目录安装是 `link:` 语义：改源码即改插件，移动或删除目录会让插件失效。
-
-### 方式 C：直接从本 GitHub 仓库安装
-
-```powershell
-& '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh'
-```
 
 安装后：**设置 → 插件** 里确认 `dsh-coros-mcp` 已启用，必要时重启 DSH。
 
@@ -134,7 +139,7 @@ node lib\proxy.mjs --selftest    # 真实连一次官方端点，列出工具
 | `token refresh failed (HTTP 400)` | refresh_token 被轮换/撤销，重新 `login-start` / `login-finish` |
 | `timed out waiting for the token lock` | 删掉 `token.json.lock`（确认没有其它 COROS 进程在跑） |
 | 只有部分工具 schema 报错 | 本包已把 `$defs`/`$ref` 内联；仍报错请附 `--selftest` 输出反馈 |
-| DSH 升级后工具消失 | 核对 `engines.dsh` 是否覆盖当前 DSH 版本；不覆盖时宿主会拒绝加载插件 |
+| DSH 升级后工具消失 | 1.0.2+ 已不会再被版本闸门拦截；若仍消失，在 DSH 日志里搜 `[coros-mcp]`（可能是 MCP 客户端 API 变更），重新安装适配新版的插件即可 |
 
 ## 隐私与安全
 
@@ -156,7 +161,7 @@ npm pack                 # prepack 自动跑 scripts/prepack-check.mjs
 
 ## 兼容性与许可
 
-- `engines.dsh`: `>=0.2.1-rc.1 <=0.2.1 || >=0.2.2-rc.1 <0.2.3-0`；`dsh.compatibility.dshReleases`: `0.2.1-rc.5`、`0.2.2-rc.1` = compatible。
+- `engines.dsh`: `>=0.2.1-rc.1`（**无上限**，覆盖未来版本；DSH 的判定带 `includePrerelease: true`）；`dsh.compatibility.dshReleases`: `0.2.1-rc.5`、`0.2.2-rc.1` = compatible。
 - Node.js ≥ 20（内置 `fetch` / `crypto` / `node:test`），无第三方运行时依赖。
 - 许可：MIT。COROS、高驰为其权利人商标；本项目与高驰官方无隶属关系。
 - 协议细节依据 COROS 官方 MCP 网关的公开端点与官方 CLI 行为整理；官方 npm 包（UNLICENSED）代码未复制、未打包。

@@ -26,6 +26,14 @@ test('package.json declares the DSH bundle entry', () => {
   assert.ok(pkg.engines.node);
 });
 
+test('engines.dsh is a bottomless minimum so DSH upgrades never gate the plugin', () => {
+  const range = pkg.engines?.dsh;
+  assert.equal(typeof range, 'string');
+  assert.ok(range.trim().startsWith('>='), 'engines.dsh must be a minimum-only range');
+  assert.equal(range.includes('<'), false, 'engines.dsh must not carry an upper bound');
+  assert.equal(/^>=0\.2\.1-rc\.1$/.test(range.trim()), true, 'keep the tested minimum');
+});
+
 test('every published file exists and the whitelist covers the runtime', () => {
   for (const entry of pkg.files) {
     assert.ok(existsSync(path.join(PACKAGE_ROOT, entry)), `missing published file: ${entry}`);
