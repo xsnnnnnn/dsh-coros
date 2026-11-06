@@ -1,0 +1,9 @@
+{
+  "name": "dsh-coros-mcp",
+  "description": "Bridge the official COROS (高驰) MCP server into DeepSeek Harness with a self-contained stdio-to-HTTP bridge and on-device OAuth login.",
+  "version": "1.0.1",
+  "entry": {
+    "name": "dsh-coros-mcp",
+    "inject": []
+  }
+}

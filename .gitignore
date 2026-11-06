@@ -1,0 +1,13 @@
+# dependencies / build artifacts
+node_modules/
+*.tgz
+npm-debug.log*
+.npm/
+
+# local secrets and tokens — never commit these
+.env
+.env.*
+.secrets/
+token.json
+*.token.json
+coros-mcp/

@@ -1,0 +1,11 @@
+# dsh-coros-mcp — mount the COROS MCP plugin.
+#
+# The plugin registers the DSH MCP client itself with paths resolved from
+# import.meta.url, so this row carries no machine-specific path and the bundle is
+# relocatable (directory link, tarball, or npm install).
+#
+# Keep the entry id unique and equal to the package name; do not add a trailing
+# comment to the id row.
+- insert:
+    - id: dsh-coros-mcp
+      name: 'dsh-coros-mcp'

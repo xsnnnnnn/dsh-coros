@@ -1,0 +1,74 @@
+{
+  "name": "dsh-coros-mcp",
+  "version": "1.0.1",
+  "description": "Bridge the official COROS (高驰) MCP server into DeepSeek Harness: a self-contained stdio-to-HTTP bridge with on-device OAuth login; tokens never leave this machine.",
+  "icon": "assets/icon.png",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "coros",
+    "mcp",
+    "running",
+    "training-data"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xsnnnnnn/dsh.git"
+  },
+  "homepage": "https://github.com/xsnnnnnn/dsh#readme",
+  "bugs": {
+    "url": "https://github.com/xsnnnnnn/dsh/issues"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "coros-mcp": "lib/proxy.mjs",
+    "coros-mcp-login": "lib/login.mjs"
+  },
+  "files": [
+    "lib",
+    "assets/icon.png",
+    "cordis.patch.yml",
+    "dsh.plugin.json",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "dsh": ">=0.2.1-rc.1 <=0.2.1 || >=0.2.2-rc.1 <0.2.3-0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-mcp-client": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-mcp-client": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none test/config.test.mjs test/proxy.test.mjs test/index.test.mjs test/login.test.mjs test/package.test.mjs",
+    "prepack": "node scripts/prepack-check.mjs",
+    "status": "node lib/proxy.mjs --status",
+    "selftest": "node lib/proxy.mjs --selftest",
+    "pack": "npm pack"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "dshReleases": {
+        "0.2.1-rc.5": "compatible",
+        "0.2.2-rc.1": "compatible"
+      }
+    }
+  }
+}
