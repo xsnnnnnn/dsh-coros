@@ -64,6 +64,9 @@ DeepSeek Harness
 & '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'github:xsnnnnnn/dsh-coros'
 ```
 
+> 不想自己打包：直接从 [GitHub Releases](https://github.com/xsnnnnnn/dsh-coros/releases) 下载 `dsh-coros-mcp-<version>.tgz`；
+> 或者用一条命令从仓库安装：`dsh plugin --profile desktop add 'github:xsnnnnnn/dsh-coros'`。
+
 ### 方式 B：从目录安装（开发）
 
 ```powershell

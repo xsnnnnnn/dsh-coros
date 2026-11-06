@@ -65,6 +65,9 @@ Requires DeepSeek Harness ≥ `0.2.1-rc.1` (`engines.dsh` is a bottomless range,
 & '<DSH>\resources\runtime\cli\bin\dsh.cmd' plugin --profile desktop add 'D:\path\to\dsh-coros-mcp'
 ```
 
+> No local build needed: download `dsh-coros-mcp-<version>.tgz` from [GitHub Releases](https://github.com/xsnnnnnn/dsh-coros/releases),
+> or install straight from the repository: `dsh plugin --profile desktop add 'github:xsnnnnnn/dsh-coros'`.
+
 Then enable `dsh-coros-mcp` in **Settings → Plugins** and restart DSH if needed.
 
 > Migrating from a hand-wired setup: back up the profile `cordis.patch.yml` and delete the manual `id: mcp-coros` `@deepseek-ai/dsh-mcp-client` row. Keeping both registers the same `mcp__coros__*` tool names twice and the tool registration fails.
